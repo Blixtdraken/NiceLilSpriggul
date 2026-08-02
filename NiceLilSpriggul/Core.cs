@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using Alta.Intelligence;
 using MelonLoader;
 using HarmonyLib;
@@ -32,21 +33,50 @@ class SpriggulDamagePatch
         {
             Transform spriggullAi = actionSet.transform.parent;
             AgentRegainControlSettings flailControl = spriggullAi.Find("Flail").GetComponent<AgentRegainControlSettings>();
-            //AgentThreatenSettings stareControl = spriggullAi.Find("Passive Set/Stare").GetComponent<AgentThreatenSettings>();
-            List<Transform> unwantedActions = new List<Transform>();
-            
-            unwantedActions.Add(spriggullAi.Find("Aggressive Set/Jump Attack"));
-            unwantedActions.Add(spriggullAi.Find("Aggressive Set/Chase"));
-            unwantedActions.Add(spriggullAi.Find("Aggressive Set/Reposition"));
-            unwantedActions.Add(spriggullAi.Find("Passive Set/Stare"));
-            
-            for (int i = 0; i < unwantedActions.Count; i++)
-            {
-                Object.Destroy(unwantedActions[i].gameObject);
+            if(false){ /*If configured to disable completely*/
+                //AgentThreatenSettings stareControl = spriggullAi.Find("Passive Set/Stare").GetComponent<AgentThreatenSettings>();
+                List<Transform> unwantedActions = new List<Transform>();
+                
+                unwantedActions.Add(spriggullAi.Find("Aggressive Set/Jump Attack"));
+                unwantedActions.Add(spriggullAi.Find("Aggressive Set/Chase"));
+                unwantedActions.Add(spriggullAi.Find("Aggressive Set/Reposition"));
+                unwantedActions.Add(spriggullAi.Find("Passive Set/Stare"));
+                
+                for (int i = 0; i < unwantedActions.Count; i++)
+                {
+                    Object.Destroy(unwantedActions[i].gameObject);
+                }
+                
+                AccessTools.Field(typeof(AgentRegainControlSettings), "exitTo").SetValue(flailControl, actionSet);
+                //AccessTools.Field(typeof(AgentThreatenSettings), "changeTo").SetValue(stareControl, actionSet);
             }
-            
-            AccessTools.Field(typeof(AgentRegainControlSettings), "exitTo").SetValue(flailControl, actionSet);
-            //AccessTools.Field(typeof(AgentThreatenSettings), "changeTo").SetValue(stareControl, actionSet);
+            else
+            {
+                List<Transform> reConfigureThis = new List<Transform>();
+                
+                reConfigureThis.Add(spriggullAi.Find("Aggressive Set/Jump Attack"));
+                reConfigureThis.Add(spriggullAi.Find("Aggressive Set/Chase"));
+                reConfigureThis.Add(spriggullAi.Find("Aggressive Set/Reposition"));
+                
+                for (int i = 0; i < reConfigureThis.Count; i++)
+                {
+                    Transform attack = reConfigureThis[i];
+                    
+                    StatOperation origAggroOperation = attack.Find("Target Preferred/Aggro 0 -> 10 (x1)").GetComponent<StatOperation>();
+                    
+                    GameObject newGameObject = new GameObject();
+                    newGameObject.transform.SetParent(attack.Find("Target Required"), false);
+                    newGameObject.name = "Aggro 0 -> 10 (x1)";
+                    
+                    StatOperation aggroOperation = newGameObject.AddComponent<StatOperation>();
+                    FieldInfo[] fields = origAggroOperation.GetType().GetFields();
+                    
+                    for (int j = 0; j<fields.Length;j++ )
+                    {
+                        fields[i].SetValue(aggroOperation, fields[i].GetValue(origAggroOperation));
+                    }
+                }
+            }
         }
         else
         {
