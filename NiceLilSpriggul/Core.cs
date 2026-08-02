@@ -27,7 +27,6 @@ class SpriggulDamagePatch
     [HarmonyPostfix]
     static void Postfix(Spriggull __instance)
     {
-        MelonLogger.Msg("Trying to spriggifiue");
         ActionComponentSet actionSet = AccessTools.Field(typeof(Spriggull), "passiveActions").GetValue(__instance) as ActionComponentSet;
         if (actionSet != null)
         {
